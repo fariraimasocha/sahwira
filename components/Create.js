@@ -17,14 +17,7 @@ export default function Create() {
     },
   });
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
+  // All state hooks
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,8 +25,53 @@ export default function Create() {
   const [tasks, setTasks] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // All ref hooks
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // All callback hooks
+  const handleFileUpload = useCallback(async () => {
+    if (!selectedFile) {
+      toast.error('No file selected');
+      return;
+    }
+
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('audio', selectedFile);
+
+    try {
+      const response = await fetch('/api/whisper', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to transcribe audio file');
+      }
+
+      const data = await response.json();
+      setTranscription(data.transcription);
+      toast.success('Audio file transcribed successfully');
+      await analyzeTranscription(data.transcription);
+    } catch (error) {
+      console.error('Error transcribing audio file:', error);
+      toast.error('Error transcribing audio file. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setSelectedFile(null);
+    }
+  }, [selectedFile]);
+
+  // Loading state check
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   const startRecording = async () => {
     try {
@@ -112,17 +150,41 @@ export default function Create() {
       }
 
       const data = await response.json();
+      
+      if (!data.content) {
+        throw new Error('Invalid response from AI');
+      }
+
+      // Clean the response string to ensure it only contains the JSON part
+      const jsonStr = data.content.trim().replace(/```json\n?|\n?```/g, '');
+      
       try {
-        const parsedTasks = JSON.parse(data.content);
-        setTasks(parsedTasks);
+        const parsedTasks = JSON.parse(jsonStr);
+        if (!Array.isArray(parsedTasks)) {
+          throw new Error('Response is not an array');
+        }
+        
+        const validatedTasks = parsedTasks.map(task => ({
+          task: task.task || 'Untitled Task',
+          priority: ['High', 'Medium', 'Low'].includes(task.priority) ? task.priority : 'Medium'
+        }));
+
+        setTasks(validatedTasks);
         toast.success('Tasks extracted successfully');
       } catch (e) {
         console.error('Error parsing tasks:', e);
-        setTasks([{ task: data.content, priority: 'Medium' }]);
+        // Create a single task from the raw content
+        const fallbackTask = {
+          task: data.content.length > 100 ? data.content.slice(0, 100) + '...' : data.content,
+          priority: 'Medium'
+        };
+        setTasks([fallbackTask]);
+        toast.warning('Could not parse tasks properly, created a single task instead');
       }
     } catch (error) {
       console.error('Error analyzing transcription:', error);
-      toast.error('Error analyzing transcription');
+      toast.error(error.message || 'Error analyzing transcription');
+      setTasks([]); // Reset tasks on error
     } finally {
       setIsAnalyzing(false);
     }
@@ -133,39 +195,6 @@ export default function Create() {
     setSelectedFile(file);
   };
 
-  const handleFileUpload = useCallback(async () => {
-    if (!selectedFile) {
-      toast.error('No file selected');
-      return;
-    }
-
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('audio', selectedFile);
-
-    try {
-      const response = await fetch('/api/whisper', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to transcribe audio file');
-      }
-
-      const data = await response.json();
-      setTranscription(data.transcription);
-      toast.success('Audio file transcribed successfully');
-      await analyzeTranscription(data.transcription);
-    } catch (error) {
-      console.error('Error transcribing audio file:', error);
-      toast.error('Error transcribing audio file. Please try again.');
-    } finally {
-      setIsLoading(false);
-      setSelectedFile(null);
-    }
-  }, [selectedFile]);
-
   const handleCopy = () => {
     navigator.clipboard.writeText(transcription)
       .then(() => toast.success('Transcription copied to clipboard'))
@@ -173,6 +202,11 @@ export default function Create() {
   };
 
   const handleSaveTasks = async () => {
+    if (!session?.user?.email) {
+      toast.error('You must be logged in to save tasks');
+      return;
+    }
+
     if (tasks.length === 0) {
       toast.error('No tasks to save');
       return;
@@ -180,29 +214,33 @@ export default function Create() {
 
     setIsSaving(true);
     try {
+      // Format tasks according to the Task model schema
+      const tasksToSave = tasks.map(task => ({
+        userId: session.user.email,
+        task: task.task,
+        priority: task.priority || 'Medium',
+        status: 'pending'
+      }));
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          tasks: tasks.map(task => ({
-            ...task,
-            userId: session.user.id,
-            status: 'pending'
-          }))
-        }),
+        body: JSON.stringify({ tasks: tasksToSave }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save tasks');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to save tasks');
       }
 
+      const result = await response.json();
       toast.success('Tasks saved successfully');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error saving tasks:', error);
-      toast.error('Error saving tasks. Please try again.');
+      toast.error(error.message || 'Error saving tasks. Please try again.');
     } finally {
       setIsSaving(false);
     }

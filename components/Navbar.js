@@ -26,6 +26,11 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {session ? (
             <div className="flex items-center gap-4">
+              <Link href="/tasks">
+                <Button variant="ghost" size="sm">
+                  Tasks
+                </Button>
+              </Link>
               <Link href="/create">
                 <Button variant="outline" size="sm">
                   Create Task
@@ -35,9 +40,9 @@ export default function Navbar() {
                 {session.user.name}
               </span>
               <Button
-                variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Sign Out
               </Button>
