@@ -1,10 +1,5 @@
-import Audio from "@/components/Create";
+import Landing from "@/components/Landing";
 
 export default function Home() {
-  return (
- <div>
-  <Audio/>
-
- </div>
-  );
+  return <Landing />;
 }
