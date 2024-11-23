@@ -31,7 +31,7 @@ export async function POST(req) {
 async function getWhisperTranscription(audioFile) {
     const response = await groq.audio.transcriptions.create({
         file: audioFile,
-        model: "whisper-large-v3",
+        model: "whisper-large-v3-turbo",
     });
     return response.text;
 }

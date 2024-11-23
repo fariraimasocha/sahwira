@@ -1,7 +1,278 @@
-import React from 'react'
+"use client"
+import React, { useState, useRef, useCallback } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Loader2, Mic, MicOff, Upload, Copy } from "lucide-react";
 
-export default function Create() {
-  return (
-    <div>Create</div>
-  )
+function Audio() {
+    const [isRecording, setIsRecording] = useState(false);
+    const [transcription, setTranscription] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [tasks, setTasks] = useState([]);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = handleStop;
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            toast.error('Error accessing microphone');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+
+    const handleStop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        await sendAudioToWhisper(audioBlob);
+    };
+
+    const sendAudioToWhisper = async (audioBlob) => {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.wav');
+
+        try {
+            const response = await fetch('/api/whisper', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to transcribe audio');
+            }
+
+            const data = await response.json();
+            setTranscription(data.transcription);
+            toast.success('Audio transcribed successfully');
+            await analyzeTranscription(data.transcription);
+        } catch (error) {
+            console.error('Error transcribing audio:', error);
+            toast.error('Error transcribing audio. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const analyzeTranscription = async (text) => {
+        setIsAnalyzing(true);
+        try {
+            const response = await fetch('/api/groq', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userMessage: `Extract and list all tasks or action items from this text. Format them as a JSON array of objects with 'task' and 'priority' (High/Medium/Low) properties. Text: ${text}`,
+                    model: "mixtral-8x7b-32768",
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to analyze transcription');
+            }
+
+            const data = await response.json();
+            try {
+                const parsedTasks = JSON.parse(data.content);
+                setTasks(parsedTasks);
+                toast.success('Tasks extracted successfully');
+            } catch (e) {
+                console.error('Error parsing tasks:', e);
+                setTasks([{ task: data.content, priority: 'Medium' }]);
+            }
+        } catch (error) {
+            console.error('Error analyzing transcription:', error);
+            toast.error('Error analyzing transcription');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        setSelectedFile(file);
+    };
+
+    const handleFileUpload = useCallback(async () => {
+        if (!selectedFile) {
+            toast.error('No file selected');
+            return;
+        }
+
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('audio', selectedFile);
+
+        try {
+            const response = await fetch('/api/whisper', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to transcribe audio file');
+            }
+
+            const data = await response.json();
+            setTranscription(data.transcription);
+            toast.success('Audio file transcribed successfully');
+            await analyzeTranscription(data.transcription);
+        } catch (error) {
+            console.error('Error transcribing audio file:', error);
+            toast.error('Error transcribing audio file. Please try again.');
+        } finally {
+            setIsLoading(false);
+            setSelectedFile(null);
+        }
+    }, [selectedFile]);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(transcription)
+            .then(() => toast.success('Transcription copied to clipboard'))
+            .catch(() => toast.error('Failed to copy text. Please try again.'));
+    };
+
+    return (
+        <div className="min-h-screen bg-background pt-[72px] sm:pt-[80px]">
+            <Toaster position="top-center" />
+            <div className="max-w-[83.5rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <h1 className="text-2xl font-extrabold mb-8 bg-gradient-to-r from-primary to-green-500 bg-clip-text text-transparent">
+                    Sahwira AI Assistant
+                </h1>
+                <div className="grid gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Record or Upload Audio</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <Button
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    className={`flex-1 ${isRecording ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isRecording ? (
+                                        <>
+                                            <MicOff className="mr-2 h-4 w-4" />
+                                            Stop Recording
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Mic className="mr-2 h-4 w-4" />
+                                            Start Recording
+                                        </>
+                                    )}
+                                </Button>
+                                <div className="flex-1">
+                                    <Input
+                                        type="file"
+                                        accept="audio/*"
+                                        onChange={handleFileChange}
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <Button
+                                    onClick={handleFileUpload}
+                                    disabled={!selectedFile || isLoading}
+                                    className="flex-1"
+                                >
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload Audio
+                                </Button>
+                            </div>
+                            {isLoading && (
+                                <div className="flex items-center justify-center">
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {transcription && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Transcription</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="relative">
+                                    <Button
+                                        onClick={handleCopy}
+                                        className="absolute top-2 right-2"
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                    <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap">
+                                        {transcription}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {isAnalyzing && (
+                        <div className="flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                            <span>Analyzing transcription...</span>
+                        </div>
+                    )}
+
+                    {tasks.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Extracted Tasks</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {tasks.map((task, index) => (
+                                        <div
+                                            key={index}
+                                            className="p-4 rounded-lg border bg-card"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm">{task.task}</p>
+                                                <span className={`px-2 py-1 rounded text-xs ${
+                                                    task.priority === 'High' 
+                                                        ? 'bg-red-100 text-red-800' 
+                                                        : task.priority === 'Medium'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {task.priority}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
+
+export default Audio;
