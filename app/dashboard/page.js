@@ -102,8 +102,27 @@ export default function Dashboard() {
     const stats = {
         total: tasks.length,
         completed: tasks.filter(t => t.status === 'completed').length,
-        inProgress: tasks.filter(t => t.status === 'in_progress').length,
-        pending: tasks.filter(t => t.status === 'pending').length,
+        incomplete: tasks.filter(t => t.status === 'pending').length,
+        // Calculate daily progress
+        dailyProgress: (() => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todaysTasks = tasks.filter(task => {
+                const taskDate = new Date(task.createdAt);
+                taskDate.setHours(0, 0, 0, 0);
+                return taskDate.getTime() === today.getTime();
+            });
+
+            const todayTotal = todaysTasks.length;
+            const todayCompleted = todaysTasks.filter(t => t.status === 'completed').length;
+            
+            return {
+                total: todayTotal,
+                completed: todayCompleted,
+                percentage: todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0
+            };
+        })()
     };
 
     return (
@@ -179,28 +198,28 @@ export default function Dashboard() {
 
                             <Card className="border-gray-200 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Incomplete</CardTitle>
                                     <Clock className="h-4 w-4 text-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl md:text-2xl font-bold text-foreground">
-                                        {stats.inProgress}
+                                        {stats.incomplete}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Tasks being worked on</p>
+                                    <p className="text-xs text-muted-foreground">Tasks pending completion</p>
                                 </CardContent>
                             </Card>
 
                             <Card className="border-gray-200 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Today's Progress</CardTitle>
                                     <Target className="h-4 w-4 text-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl md:text-2xl font-bold text-foreground">
-                                        {stats.total ? Math.round((stats.completed / stats.total) * 100) : 0}%
+                                        {stats.dailyProgress.percentage}%
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        Here&apos;s your task completion rate
+                                        {stats.dailyProgress.completed} of {stats.dailyProgress.total} tasks completed today
                                     </p>
                                 </CardContent>
                             </Card>

@@ -26,14 +26,19 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {session ? (
             <div className="flex items-center gap-4">
-              <Link href="/tasks">
-                <Button variant="ghost" size="sm">
-                  Tasks
-                </Button>
-              </Link>
               <Link href="/create">
                 <Button variant="outline" size="sm">
                   Create Task
+                </Button>
+              </Link>
+              <Link href="/tasks">
+                <Button variant="outline" size="sm">
+                  Tasks
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  Dashboard
                 </Button>
               </Link>
               <span className="text-sm text-gray-600">
