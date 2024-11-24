@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, User, Settings, LogOut } from "lucide-react";
+import { Menu, X, User, Settings, LogOut, Trophy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,14 @@ export default function Navbar() {
         </button>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center space-x-4 px-4 md:px-24">
+          <Link
+            href="/leaderboard"
+            className="text-sm font-medium hover:text-primary flex items-center gap-2"
+          >
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </Link>
           {session ? (
             <div className="flex items-center gap-4">
               <Link href="/create">
@@ -75,7 +82,6 @@ export default function Navbar() {
                   Copilot
                 </Button>
               </Link>
-              
               {/* User Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -130,6 +136,12 @@ export default function Navbar() {
       {/* Mobile Navigation */}
       <div className={`md:hidden ${isOpen ? 'block' : 'hidden'} border-t border-gray-200`}>
         <div className="flex flex-col space-y-2 px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Link href="/leaderboard" onClick={() => setIsOpen(false)}>
+            <Button variant="outline" size="sm" className="w-full justify-start">
+              <Trophy className="mr-2 h-4 w-4" />
+              Leaderboard
+            </Button>
+          </Link>
           {session ? (
             <>
               <Link href="/create" onClick={() => setIsOpen(false)}>
