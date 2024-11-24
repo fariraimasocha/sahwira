@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const ConversationSchema = new mongoose.Schema({
+const conversationSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
@@ -34,4 +34,7 @@ const ConversationSchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
+// Check if the model exists before creating a new one
+const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
+
+export default Conversation;
