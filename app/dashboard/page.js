@@ -211,7 +211,7 @@ export default function Dashboard() {
 
                             <Card className="border-gray-200 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Today's Progress</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Today&apos;s Progress</CardTitle>
                                     <Target className="h-4 w-4 text-foreground" />
                                 </CardHeader>
                                 <CardContent>

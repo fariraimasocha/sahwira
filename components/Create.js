@@ -156,7 +156,10 @@ export default function Create() {
       }
 
       // Clean the response string to ensure it only contains the JSON part
-      const jsonStr = data.content.trim().replace(/```json\n?|\n?```/g, '');
+      const jsonStr = data.content.trim()
+        .replace(/```json\n?|\n?```/g, '')  // Remove code blocks
+        .replace(/^[^[{]*/g, '')  // Remove any text before the first [ or {
+        .replace(/[^}\]]*$/g, ''); // Remove any text after the last } or ]
       
       try {
         const parsedTasks = JSON.parse(jsonStr);
