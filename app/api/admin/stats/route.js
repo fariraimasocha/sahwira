@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '../../../lib/dbConnect';
 import User from '../../../models/User';
 import Task from '../../../models/Task';
-import conversation from '../../../models/Conversation';
+import Conversation from '../../../models/Conversation';
 
 export async function GET(request) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request) {
     // Get counts
     const userCount = await User.countDocuments();
     const taskCount = await Task.countDocuments();
-    const conversationCount = await conversation.countDocuments();
+    const conversationCount = await Conversation.countDocuments();
 
     // Get daily stats for the last 30 days
     const thirtyDaysAgo = new Date();
@@ -40,7 +40,7 @@ export async function GET(request) {
         },
         { $sort: { "_id": 1 } }
       ]),
-      conversation.aggregate([
+      Conversation.aggregate([
         {
           $match: {
             createdAt: { $gte: thirtyDaysAgo }
