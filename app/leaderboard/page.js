@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Trophy, Activity } from 'lucide-react'
+import { Trophy, Medal } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { Progress } from '@/components/ui/progress'
 
 export default function LeaderboardPage() {
+  const { data: session } = useSession()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -28,59 +31,116 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 py-6 md:py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary mx-auto" />
       </div>
     )
   }
 
+  // Find current user's rank
+  const currentUserRank = users.findIndex(user => user.email === session?.user?.email) + 1
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl bg-white shadow-xl rounded-xl">
-        <CardHeader className="border-b border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-yellow-500" />
-              <h2 className="text-3xl font-bold text-gray-900">Leaderboard</h2>
+    <div className="container mx-auto px-6 md:px-12 lg:px-24 py-6 md:py-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* User's Current Rank */}
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Your Ranking</CardTitle>
+            <CardDescription>Your current position on the leaderboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Trophy className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">
+                  {currentUserRank > 0 ? `#${currentUserRank}` : 'Not Ranked'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {currentUserRank > 0 ? 'Keep up the great work!' : 'Complete tasks to get ranked'}
+                </p>
+              </div>
             </div>
-            <Activity className="w-6 h-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">Top performers showcasing excellence in task completion</p>
+          </CardContent>
+        </Card>
+
+        {/* Top 3 Users */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Top Performers</CardTitle>
+            <CardDescription>Users with the most completed tasks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6">
+              {users.slice(0, 3).map((user, index) => (
+                <div
+                  key={user._id}
+                  className="flex items-center gap-4 p-4 rounded-lg bg-muted/50"
+                >
+                  <div className="flex items-center justify-center w-8 h-8">
+                    <span className="text-2xl">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                    </span>
+                  </div>
+                  <Avatar className="h-10 w-10 border-2 border-background">
+                    <AvatarImage src={user.image} />
+                    <AvatarFallback>
+                      {user.name?.charAt(0) || user.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user.name || user.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user.completedTasks} tasks completed
+                    </p>
+                  </div>
+                  <Progress 
+                    value={((users[0].completedTasks - user.completedTasks) / users[0].completedTasks) * 100} 
+                    className="w-20"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Full Leaderboard */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Full Leaderboard</CardTitle>
+          <CardDescription>All ranked users</CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent>
           <div className="space-y-6">
             {users.map((user, index) => (
               <div
                 key={user._id}
-                className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 ease-in-out"
+                className={`flex items-center gap-4 p-4 rounded-lg transition-colors ${
+                  user.email === session?.user?.email ? 'bg-primary/10' : 'hover:bg-muted/50'
+                }`}
               >
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center justify-center w-8 font-bold">
-                    {index + 1 <= 3 ? (
-                      <span className="text-2xl">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                      </span>
-                    ) : (
-                      <span className="text-xl text-gray-400">
-                        {index + 1}
-                      </span>
-                    )}
-                  </div>
-                  <Avatar className="h-12 w-12 ring-2 ring-offset-2 ring-gray-100">
-                    <AvatarImage src={user.image} />
-                    <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700">
-                      {user.name?.charAt(0) || user.email?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-semibold text-gray-900">{user.name || user.email}</div>
-                    <div className="text-sm text-gray-500 hidden md:block">{user.email}</div>
-                  </div>
+                <div className="w-8 text-center font-medium text-muted-foreground">
+                  #{index + 1}
                 </div>
-                <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-2 rounded-full shadow-sm">
-                  <span className="font-bold text-xl text-gray-900">{user.completedTasks}</span>
-                  <span className="text-gray-500">tasks</span>
+                <Avatar className="h-10 w-10 border-2 border-background">
+                  <AvatarImage src={user.image} />
+                  <AvatarFallback>
+                    {user.name?.charAt(0) || user.email?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user.name || user.email}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {user.completedTasks} tasks completed
+                  </p>
                 </div>
+                <Progress 
+                  value={((users[0].completedTasks - user.completedTasks) / users[0].completedTasks) * 100} 
+                  className="w-24"
+                />
               </div>
             ))}
           </div>
