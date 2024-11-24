@@ -16,7 +16,7 @@ export async function GET(request) {
 
     await dbConnect();
 
-    // Get counts
+  
     const userCount = await User.countDocuments();
     const taskCount = await Task.countDocuments();
     const conversationCount = await Conversation.countDocuments();
