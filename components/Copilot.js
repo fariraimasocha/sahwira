@@ -125,7 +125,7 @@ export default function Copilot({ conversation, onConversationUpdate }) {
 
       await saveConversation(newMessages);
       
-      speakText(data.content);
+      await speakText(data.content);
     } catch (error) {
       console.error('AI processing error:', error);
       toast.error(error.message || 'Failed to process with AI');
