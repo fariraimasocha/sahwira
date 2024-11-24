@@ -262,17 +262,9 @@ export default function Dashboard() {
                                             type="monotone"
                                             dataKey="tasks"
                                             stroke="#020817"
-                                            strokeWidth={2}
-                                            dot={false}
+                                            strokeWidth={3}
+                                            dot={true}
                                             name="Total Tasks"
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="completed"
-                                            stroke="#64748b"
-                                            strokeWidth={2}
-                                            dot={false}
-                                            name="Completed"
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>
