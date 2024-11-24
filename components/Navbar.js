@@ -82,6 +82,13 @@ export default function Navbar() {
                   Copilot
                 </Button>
               </Link>
+              {session.user.email === 'fariraimasocha@gmail.com' && (
+                <Link href="/admin/dashboard">
+                  <Button variant="outline" size="sm">
+                    Admin
+                  </Button>
+                </Link>
+              )}
               {/* User Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -164,6 +171,13 @@ export default function Navbar() {
                   Copilot
                 </Button>
               </Link>
+              {session.user.email === 'fariraimasocha@gmail.com' && (
+                <Link href="/admin/dashboard" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <div className="pt-2 border-t border-gray-200">
                 <div className="flex items-center gap-3 px-2 py-2">
                   {session.user.image ? (
