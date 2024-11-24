@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 import Task from '@/models/Task';
-import Conversation from '@/models/Conversation';
+import Conversation from '../../../../models/Conversation';
 
 export async function GET(request) {
   try {
