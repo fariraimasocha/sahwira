@@ -30,13 +30,21 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
           if (data.length === 0) {
             toast('No conversations found', {
               icon: '💭',
-              duration: 3000
+              duration: 3000,
+              style: {
+                background: '#f3f4f6',
+                color: '#374151',
+              },
             });
           }
         } catch (error) {
           console.error('Error fetching conversations:', error);
           toast.error('Failed to load conversations', {
-            duration: 4000
+            duration: 4000,
+            style: {
+              background: '#f3f4f6',
+              color: '#374151',
+            },
           });
         } finally {
           setIsLoading(false);
@@ -49,62 +57,56 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
 
   const handleDelete = async (e, conversationId) => {
     e.stopPropagation();
+    e.preventDefault();
     
-    // Custom confirm toast
-    const confirmDelete = () => {
-      return new Promise((resolve) => {
-        toast((t) => (
-          <div className="flex flex-col gap-2">
-            <p className="font-medium">Delete this conversation?</p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(true);
-                }}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        ), { duration: 5000 });
-      });
-    };
-
-    const shouldDelete = await confirmDelete();
-    if (!shouldDelete) return;
-
-    const deleteToast = toast.loading('Deleting conversation...');
+    const deleteToast = toast.loading('Deleting conversation...', {
+      style: {
+        background: '#f3f4f6',
+        color: '#374151',
+      },
+    });
+    
     try {
       const response = await fetch(
         `/api/conversations?id=${conversationId}&userId=${session.user.id}`,
-        { method: 'DELETE' }
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
       
-      if (!response.ok) throw new Error('Failed to delete conversation');
+      const data = await response.json();
       
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete conversation');
+      }
+      
+      // Update local state
       setConversations(prev => prev.filter(conv => conv._id !== conversationId));
-      toast.success('Conversation deleted', {
+      
+      if (currentConversationId === conversationId) {
+        onSelectConversation(null);
+      }
+      
+      toast.success('Conversation deleted successfully', {
         id: deleteToast,
-        duration: 3000
+        duration: 3000,
+        style: {
+          background: '#f3f4f6',
+          color: '#374151',
+        },
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
-      toast.error('Failed to delete conversation', {
+      toast.error(`Failed to delete conversation: ${error.message}`, {
         id: deleteToast,
-        duration: 4000
+        duration: 4000,
+        style: {
+          background: '#f3f4f6',
+          color: '#374151',
+        },
       });
     }
   };
@@ -113,9 +115,13 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
     e.stopPropagation();
     setEditingId(conversation._id);
     setEditTitle(conversation.title);
-    toast('Editing title...', {
+    toast('Editing conversation title...', {
       icon: '✏️',
-      duration: 2000
+      duration: 2000,
+      style: {
+        background: '#f3f4f6',
+        color: '#374151',
+      },
     });
   };
 
@@ -123,12 +129,22 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
     e.stopPropagation();
     if (!editTitle.trim()) {
       toast.error('Title cannot be empty', {
-        duration: 3000
+        duration: 3000,
+        style: {
+          background: '#f3f4f6',
+          color: '#374151',
+        },
       });
       return;
     }
 
-    const updateToast = toast.loading('Updating title...');
+    const updateToast = toast.loading('Updating title...', {
+      style: {
+        background: '#f3f4f6',
+        color: '#374151',
+      },
+    });
+    
     try {
       const response = await fetch('/api/conversations', {
         method: 'PATCH',
@@ -136,28 +152,43 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
         body: JSON.stringify({
           conversationId,
           userId: session.user.id,
-          title: editTitle.trim()
+          title: editTitle
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to update title');
-      
-      const updatedConversation = await response.json();
-      setConversations(prev => 
-        prev.map(conv => 
-          conv._id === conversationId ? updatedConversation : conv
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update title');
+      }
+
+      setConversations(prev =>
+        prev.map(conv =>
+          conv._id === conversationId
+            ? { ...conv, title: editTitle }
+            : conv
         )
       );
       setEditingId(null);
-      toast.success('Title updated', {
+      setEditTitle('');
+
+      toast.success('Title updated successfully', {
         id: updateToast,
-        duration: 3000
+        duration: 3000,
+        style: {
+          background: '#f3f4f6',
+          color: '#374151',
+        },
       });
     } catch (error) {
       console.error('Error updating title:', error);
-      toast.error('Failed to update title', {
+      toast.error(`Failed to update title: ${error.message}`, {
         id: updateToast,
-        duration: 4000
+        duration: 4000,
+        style: {
+          background: '#f3f4f6',
+          color: '#374151',
+        },
       });
     }
   };
@@ -168,7 +199,11 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
     setEditTitle('');
     toast('Edit cancelled', {
       icon: '❌',
-      duration: 2000
+      duration: 2000,
+      style: {
+        background: '#f3f4f6',
+        color: '#374151',
+      },
     });
   };
 
