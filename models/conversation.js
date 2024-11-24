@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const ConversationSchema = new mongoose.Schema({
+const conversationSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
@@ -34,5 +34,7 @@ const ConversationSchema = new mongoose.Schema({
   }
 });
 
+const ConversationModel = mongoose.models.Conversation;
+const Conversation = ConversationModel ? ConversationModel : mongoose.model('Conversation', conversationSchema);
 
-export default mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
+export { Conversation as default };
