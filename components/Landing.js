@@ -13,7 +13,7 @@ export default function Landing() {
           Your intelligent sidekick for task management and voice transcription
         </p>
         <button
-          onClick={() => signIn("google")}
+          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
           className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
         >
           Get Started
