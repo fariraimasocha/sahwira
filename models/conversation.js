@@ -34,6 +34,5 @@ const ConversationSchema = new mongoose.Schema({
   }
 });
 
-const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
-
-export default Conversation;
+// Create model if it doesn't exist
+export default mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
