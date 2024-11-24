@@ -32,7 +32,7 @@ const taskSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create compound index for faster queries
+
 taskSchema.index({ userId: 1, status: 1 });
 
 const Task = mongoose.models.Task || mongoose.model('Task', taskSchema);
