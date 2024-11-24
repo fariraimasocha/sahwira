@@ -1,21 +1,40 @@
 "use client";
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import toast from 'react-hot-toast';
+import cn from 'classnames';
+import { useSession } from 'next-auth/react';
 
-export default function Copilot() {
+export default function Copilot({ conversation, onConversationUpdate }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [messages, setMessages] = useState([]);
+  const { data: session } = useSession();
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const speechSynthesisRef = useRef(null);
+
+  useEffect(() => {
+    if (conversation) {
+      setMessages(conversation.messages);
+      const lastUserMessage = conversation.messages.findLast(m => m.role === 'user');
+      const lastAiMessage = conversation.messages.findLast(m => m.role === 'assistant');
+      if (lastUserMessage) setTranscription(lastUserMessage.content);
+      if (lastAiMessage) setAiResponse(lastAiMessage.content);
+    } else {
+      setMessages([]);
+      setTranscription('');
+      setAiResponse('');
+    }
+  }, [conversation]);
 
   const startRecording = async () => {
     try {
@@ -97,13 +116,48 @@ export default function Copilot() {
       const data = await response.json();
       setAiResponse(data.content);
       
-      // Automatically start speaking the response
+      const newMessages = [
+        ...messages,
+        { role: 'user', content: text },
+        { role: 'assistant', content: data.content }
+      ];
+      setMessages(newMessages);
+
+      await saveConversation(newMessages);
+      
       speakText(data.content);
     } catch (error) {
       console.error('AI processing error:', error);
       toast.error(error.message || 'Failed to process with AI');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const saveConversation = async (messages) => {
+    setIsSaving(true);
+    try {
+      if (!session?.user?.id) {
+        console.error('No user session found');
+        return;
+      }
+
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages,
+          userId: session.user.id
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save conversation');
+      const conversation = await response.json();
+      onConversationUpdate?.();
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -144,7 +198,7 @@ export default function Copilot() {
           <Button 
             onClick={isRecording ? stopRecording : startRecording}
             variant={isRecording ? "destructive" : "default"}
-            disabled={isLoading || isAnalyzing}
+            disabled={isLoading || isAnalyzing || isSaving}
           >
             {isRecording ? (
               <>
@@ -163,7 +217,7 @@ export default function Copilot() {
             <Button
               onClick={isSpeaking ? stopSpeaking : () => speakText(aiResponse)}
               variant="outline"
-              disabled={isLoading || isAnalyzing}
+              disabled={isLoading || isAnalyzing || isSaving}
             >
               {isSpeaking ? (
                 <>
@@ -180,28 +234,43 @@ export default function Copilot() {
           )}
         </div>
 
-        {(isLoading || isAnalyzing) && (
+        {(isLoading || isAnalyzing || isSaving) && (
           <div className="flex items-center justify-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{isLoading ? 'Transcribing...' : 'Processing with AI...'}</span>
+            <span>
+              {isLoading ? 'Transcribing...' : 
+               isAnalyzing ? 'Processing with AI...' :
+               'Saving conversation...'}
+            </span>
           </div>
         )}
 
-        {transcription && (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2">Your Message:</h3>
-            <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap">
-              {transcription}
-            </div>
+        {messages.length > 0 && (
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "p-4 rounded-lg",
+                  message.role === 'user' 
+                    ? "bg-muted" 
+                    : "bg-primary/10"
+                )}
+              >
+                <div className="text-sm font-medium mb-1">
+                  {message.role === 'user' ? 'You' : 'AI Assistant'}
+                </div>
+                <div className="whitespace-pre-wrap">
+                  {message.content}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {aiResponse && (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2">AI Response:</h3>
-            <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap">
-              {aiResponse}
-            </div>
+        {messages.length === 0 && !transcription && !aiResponse && (
+          <div className="text-center text-muted-foreground py-8">
+            Start a conversation by recording your voice
           </div>
         )}
       </CardContent>
