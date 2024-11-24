@@ -5,7 +5,16 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, Settings, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -66,16 +75,46 @@ export default function Navbar() {
                   Copilot
                 </Button>
               </Link>
-              <span className="text-sm text-gray-600">
-                {session.user.name}
-              </span>
-              <Button
-                size="sm"
-                onClick={handleSignOut}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                Sign Out
-              </Button>
+              
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    {session.user.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt="Profile"
+                        className="rounded-full"
+                        fill
+                        sizes="32px"
+                      />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {session.user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/profile">
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <Button
@@ -114,15 +153,31 @@ export default function Navbar() {
                 </Button>
               </Link>
               <div className="pt-2 border-t border-gray-200">
-                <span className="text-sm text-gray-600 block pb-2">
-                  {session.user.name}
-                </span>
+                <div className="flex items-center gap-3 px-2 py-2">
+                  {session.user.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt="Profile"
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <User className="h-8 w-8 p-1 rounded-full border" />
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{session.user.name}</span>
+                    <span className="text-xs text-muted-foreground">{session.user.email}</span>
+                  </div>
+                </div>
                 <Button
+                  variant="ghost"
                   size="sm"
                   onClick={handleSignOut}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  Sign Out
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
                 </Button>
               </div>
             </>
