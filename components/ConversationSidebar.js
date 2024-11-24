@@ -3,18 +3,19 @@ import { useEffect, useState } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
-import { Loader2, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Loader2, Trash2, Edit2, Check, X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 
-export default function ConversationSidebar({ onSelectConversation, currentConversationId }) {
+export default function ConversationSidebar({ onSelectConversation, currentConversationId, onToggle }) {
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { data: session } = useSession();
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -171,6 +172,12 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
     });
   };
 
+  const toggleSidebar = () => {
+    const newState = !isExpanded;
+    setIsExpanded(newState);
+    onToggle?.(newState);  // Emit the new state to the parent
+  };
+
   if (!session?.user?.id) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -188,88 +195,124 @@ export default function ConversationSidebar({ onSelectConversation, currentConve
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-4rem)] w-full">
-      <div className="flex flex-col gap-2 p-4">
-        {conversations.map((conversation) => (
-          <div
-            key={conversation._id}
-            className={cn(
-              "relative flex flex-col gap-1.5 p-3 rounded-lg transition-all cursor-pointer",
-              "border-[1.5px] border-border/20",
-              "shadow-[0_2px_4px_0_rgb(0,0,0,0.02),0_1px_6px_0_rgb(0,0,0,0.01)]",
-              "bg-gradient-to-r from-card/90 to-background/95 backdrop-blur-sm",
-              "hover:from-card hover:to-background hover:border-border/30",
-              "hover:shadow-[0_4px_8px_0_rgb(0,0,0,0.04),0_2px_4px_0_rgb(0,0,0,0.02)]",
-              currentConversationId === conversation._id ? 
-                "bg-accent/90 shadow-[0_4px_12px_0_rgb(0,0,0,0.05)] border-border/40" : 
-                "",
-              "group"
-            )}
-            onClick={() => onSelectConversation(conversation)}
-          >
-            {editingId === conversation._id ? (
-              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                <Input
-                  value={editTitle}
-                  onChange={e => setEditTitle(e.target.value)}
-                  className="h-7 text-sm"
-                  autoFocus
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 p-0"
-                  onClick={e => handleTitleUpdate(e, conversation._id)}
-                >
-                  <Check className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 p-0"
-                  onClick={cancelEditing}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-2 w-full">
-                <span className="text-sm font-medium truncate">
-                  {conversation.title}
-                </span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    onClick={e => startEditing(e, conversation)}
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={e => handleDelete(e, conversation._id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{format(new Date(conversation.updatedAt), 'MMM d, yyyy')}</span>
-              <span>{conversation.messages.length} messages</span>
-            </div>
-          </div>
-        ))}
-
-        {conversations.length === 0 && (
-          <div className="text-sm text-muted-foreground text-center py-4">
-            No conversations yet
-          </div>
+    <div className={cn(
+      "relative h-[calc(100vh-4rem)] border-r transition-all duration-300",
+      isExpanded ? "w-80 lg:w-96" : "w-16"
+    )}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -right-3 top-2 h-6 w-6 rounded-full border shadow-md p-0 hover:bg-background z-20"
+        onClick={toggleSidebar}
+      >
+        {isExpanded ? (
+          <ChevronLeft className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
         )}
-      </div>
-    </ScrollArea>
+      </Button>
+
+      <ScrollArea className="h-full">
+        <div className={cn(
+          "flex flex-col gap-2 p-4",
+          !isExpanded && "items-center"
+        )}>
+          {conversations.map((conversation) => (
+            <div
+              key={conversation._id}
+              className={cn(
+                "relative flex flex-col gap-1.5 rounded-lg transition-all cursor-pointer",
+                "border-[1.5px] border-border/20",
+                "shadow-[0_2px_4px_0_rgb(0,0,0,0.02),0_1px_6px_0_rgb(0,0,0,0.01)]",
+                "bg-gradient-to-r from-card/90 to-background/95 backdrop-blur-sm",
+                "hover:from-card hover:to-background hover:border-border/30",
+                "hover:shadow-[0_4px_8px_0_rgb(0,0,0,0.04),0_2px_4px_0_rgb(0,0,0,0.02)]",
+                currentConversationId === conversation._id ? 
+                  "bg-accent/90 shadow-[0_4px_12px_0_rgb(0,0,0,0.05)] border-border/40" : 
+                  "",
+                "group",
+                isExpanded ? "p-3" : "p-2 w-12 h-12 justify-center items-center"
+              )}
+              onClick={() => onSelectConversation(conversation)}
+              title={!isExpanded ? conversation.title : undefined}
+            >
+              {isExpanded ? (
+                <>
+                  {editingId === conversation._id ? (
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <Input
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="h-7 text-sm"
+                        autoFocus
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={e => handleTitleUpdate(e, conversation._id)}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={cancelEditing}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="text-sm font-medium truncate">
+                        {conversation.title}
+                      </span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          onClick={e => startEditing(e, conversation)}
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={e => handleDelete(e, conversation._id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{format(new Date(conversation.updatedAt), 'MMM d, yyyy')}</span>
+                    <span>{conversation.messages.length} messages</span>
+                  </div>
+                </>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-medium">
+                    {conversation.title.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {conversations.length === 0 && (
+            <div className={cn(
+              "text-sm text-muted-foreground text-center",
+              isExpanded ? "py-4" : "w-12 py-2"
+            )}>
+              {isExpanded ? "No conversations yet" : "Empty"}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }

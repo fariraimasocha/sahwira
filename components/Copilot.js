@@ -186,93 +186,73 @@ export default function Copilot({ conversation, onConversationUpdate }) {
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>AI Voice Assistant</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-3xl mx-auto rounded-lg shadow-md">
+      <CardHeader className="space-y-2 md:space-y-4">
+        <CardTitle className="text-xl md:text-2xl text-center md:text-left">AI Voice Assistant</CardTitle>
+        <CardDescription className="text-sm md:text-base text-center md:text-left">
           Record your voice to interact with the AI assistant
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex justify-center space-x-4">
+      <CardContent className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4">
           <Button 
             onClick={isRecording ? stopRecording : startRecording}
             variant={isRecording ? "destructive" : "default"}
             disabled={isLoading || isAnalyzing || isSaving}
+            className="w-full md:w-auto min-w-[160px] relative"
           >
             {isRecording ? (
               <>
-                <MicOff className="mr-2 h-4 w-4" />
+                <MicOff className="w-4 h-4 mr-2" />
                 Stop Recording
               </>
             ) : (
               <>
-                <Mic className="mr-2 h-4 w-4" />
+                <Mic className="w-4 h-4 mr-2" />
                 Start Recording
               </>
             )}
           </Button>
-
-          {aiResponse && (
-            <Button
-              onClick={isSpeaking ? stopSpeaking : () => speakText(aiResponse)}
-              variant="outline"
-              disabled={isLoading || isAnalyzing || isSaving}
-            >
-              {isSpeaking ? (
-                <>
-                  <VolumeX className="mr-2 h-4 w-4" />
-                  Stop Speaking
-                </>
-              ) : (
-                <>
-                  <Volume2 className="mr-2 h-4 w-4" />
-                  Speak Response
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            onClick={isSpeaking ? stopSpeaking : () => speakText(aiResponse)}
+            variant="outline"
+            disabled={!aiResponse || isLoading || isAnalyzing}
+            className="w-full md:w-auto min-w-[160px]"
+          >
+            {isSpeaking ? (
+              <>
+                <VolumeX className="w-4 h-4 mr-2" />
+                Stop Speaking
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 mr-2" />
+                Speak Response
+              </>
+            )}
+          </Button>
         </div>
 
-        {(isLoading || isAnalyzing || isSaving) && (
-          <div className="flex items-center justify-center space-x-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>
-              {isLoading ? 'Transcribing...' : 
-               isAnalyzing ? 'Processing with AI...' :
-               'Saving conversation...'}
-            </span>
+        <div className="space-y-4">
+          <div className="min-h-[100px] p-4 bg-muted rounded-lg">
+            <p className="text-sm font-medium mb-2">Your Message:</p>
+            <p className="text-sm md:text-base whitespace-pre-wrap">
+              {transcription || 'Your transcribed message will appear here...'}
+            </p>
           </div>
-        )}
 
-        {messages.length > 0 && (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "p-4 rounded-lg",
-                  message.role === 'user' 
-                    ? "bg-muted" 
-                    : "bg-primary/10"
-                )}
-              >
-                <div className="text-sm font-medium mb-1">
-                  {message.role === 'user' ? 'You' : 'AI Assistant'}
-                </div>
-                <div className="whitespace-pre-wrap">
-                  {message.content}
-                </div>
+          <div className="relative min-h-[150px] p-4 bg-muted rounded-lg">
+            <p className="text-sm font-medium mb-2">AI Response:</p>
+            {(isLoading || isAnalyzing) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
+                <Loader2 className="w-6 h-6 animate-spin" />
               </div>
-            ))}
+            )}
+            <p className="text-sm md:text-base whitespace-pre-wrap">
+              {aiResponse || 'AI response will appear here...'}
+            </p>
           </div>
-        )}
-
-        {messages.length === 0 && !transcription && !aiResponse && (
-          <div className="text-center text-muted-foreground py-8">
-            Start a conversation by recording your voice
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
