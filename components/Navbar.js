@@ -41,6 +41,11 @@ export default function Navbar() {
                   Dashboard
                 </Button>
               </Link>
+              <Link href="/copilot">
+                <Button variant="outline" size="sm">
+                  Copilot
+                </Button>
+              </Link>
               <span className="text-sm text-gray-600">
                 {session.user.name}
               </span>
