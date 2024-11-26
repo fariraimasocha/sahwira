@@ -34,6 +34,13 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
         <Link href={session ? "/dashboard" : "/"} className="flex px-4 md:px-24 items-center space-x-2">
+          <Image
+            src="/logo.png"
+            alt="Sahwira AI Logo"
+            width={32}
+            height={32}
+            className="rounded-sm"
+          />
           <span className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-900 bg-clip-text text-transparent">
             Sahwira AI
           </span>
