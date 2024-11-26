@@ -205,6 +205,16 @@ export default function Navbar() {
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign out
                 </Button>
+                <Link href="/profile" onClick={() => setIsOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Button>
+                </Link>
               </div>
             </>
           ) : (
