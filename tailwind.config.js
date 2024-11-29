@@ -15,7 +15,9 @@ module.exports = {
         },
         wave: {
           '0%': { transform: 'scaleY(0.2)' },
+          '25%': { transform: 'scaleY(0.4)' },
           '50%': { transform: 'scaleY(1)' },
+          '75%': { transform: 'scaleY(0.4)' },
           '100%': { transform: 'scaleY(0.2)' },
         },
         float: {

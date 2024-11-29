@@ -10,14 +10,16 @@ import { Loader2, Mic, MicOff, Upload, Copy, Save } from "lucide-react";
 
 const AudioVisualizer = () => {
   return (
-    <div className="flex justify-center items-center gap-1 h-16 bg-black/5 rounded-lg p-4">
-      {[...Array(20)].map((_, i) => (
+    <div className="flex justify-center items-center gap-[2px] h-16 bg-black/5 rounded-lg p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 animate-gradient opacity-50" />
+      {[...Array(28)].map((_, i) => (
         <div
           key={i}
-          className="w-1 bg-gradient-to-t from-primary to-primary/50 rounded-full animate-wave"
+          className="w-[2px] bg-gradient-to-t from-primary/80 via-primary/50 to-primary/20 rounded-full animate-wave"
           style={{
             height: '100%',
-            animationDelay: `${i * 0.05}s`,
+            animationDelay: `${i * 0.04}s`,
+            animationDuration: `${0.8 + Math.random() * 0.5}s`,
             transform: 'scaleY(0.2)',
           }}
         />
