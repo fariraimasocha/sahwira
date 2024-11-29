@@ -8,6 +8,24 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Loader2, Mic, MicOff, Upload, Copy, Save } from "lucide-react";
 
+const AudioVisualizer = () => {
+  return (
+    <div className="flex justify-center items-center gap-1 h-16 bg-black/5 rounded-lg p-4">
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className="w-1 bg-gradient-to-t from-primary to-primary/50 rounded-full animate-wave"
+          style={{
+            height: '100%',
+            animationDelay: `${i * 0.05}s`,
+            transform: 'scaleY(0.2)',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 export default function Create() {
   const router = useRouter();
   const { data: session, status } = useSession({
@@ -263,23 +281,35 @@ export default function Create() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`flex-1 ${isRecording ? 'bg-red-500 hover:bg-red-600' : ''}`}
-                  disabled={isLoading}
-                >
-                  {isRecording ? (
-                    <>
-                      <MicOff className="mr-2 h-4 w-4" />
-                      Stop Recording
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="mr-2 h-4 w-4" />
-                      Start Recording
-                    </>
+                <div className="flex-1 relative">
+                  <Button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`w-full relative overflow-hidden transition-all duration-300 ${
+                      isRecording 
+                        ? 'bg-red-500 hover:bg-red-600' 
+                        : 'hover:shadow-[0_0_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] transform transition-transform'
+                    }`}
+                    disabled={isLoading}
+                  >
+                    {isRecording ? (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent bg-[length:200%_100%] animate-gradient" />
+                        <MicOff className="mr-2 h-4 w-4 animate-float text-white" />
+                        <span className="relative z-10 text-white">Stop Recording</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="mr-2 h-4 w-4" />
+                        Start Recording
+                      </>
+                    )}
+                  </Button>
+                  {isRecording && (
+                    <div className="mt-4">
+                      <AudioVisualizer />
+                    </div>
                   )}
-                </Button>
+                </div>
                 <div className="flex-1">
                   <Input
                     type="file"

@@ -8,6 +8,26 @@ module.exports = {
   ],
   theme: {
   	extend: {
+      keyframes: {
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        wave: {
+          '0%': { transform: 'scaleY(0.2)' },
+          '50%': { transform: 'scaleY(1)' },
+          '100%': { transform: 'scaleY(0.2)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+      },
+      animation: {
+        gradient: 'gradient 3s ease-in-out infinite',
+        wave: 'wave 1.2s ease-in-out infinite',
+        float: 'float 3s ease-in-out infinite',
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
