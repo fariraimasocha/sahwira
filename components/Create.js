@@ -237,7 +237,6 @@ export default function Create() {
 
     setIsSaving(true);
     try {
-      // Format tasks according to the Task model schema
       const tasksToSave = tasks.map(task => ({
         userId: session.user.email,
         task: task.task,
