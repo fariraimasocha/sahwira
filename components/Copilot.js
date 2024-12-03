@@ -157,32 +157,45 @@ export default function Copilot({ conversation, onConversationUpdate }) {
      }
    };
 
-   const speakText = (text) => {
+   const speakText = async (text) => {
+     if (isSpeaking) {
+       setIsSpeaking(false);
+       return;
+     }
+
      try {
-       if (speechSynthesisRef.current) {
-         speechSynthesisRef.current.cancel();
+       setIsSpeaking(true);
+       const response = await fetch('/api/tts', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({ text }),
+       });
+
+       if (!response.ok) {
+         throw new Error('Failed to generate speech');
        }
 
-       const utterance = new SpeechSynthesisUtterance(text);
-       utterance.onstart = () => setIsSpeaking(true);
-       utterance.onend = () => setIsSpeaking(false);
-       utterance.onerror = () => {
+       const audioBlob = await response.blob();
+       const audioUrl = URL.createObjectURL(audioBlob);
+       const audio = new Audio(audioUrl);
+       
+       audio.onended = () => {
          setIsSpeaking(false);
-         toast.error('Failed to speak response');
+         URL.revokeObjectURL(audioUrl);
        };
 
-       speechSynthesisRef.current = window.speechSynthesis;
-       speechSynthesisRef.current.speak(utterance);
-     } catch (error) {
-       console.error('Text-to-speech error:', error);
-       toast.error('Failed to speak response');
-       setIsSpeaking(false);
-     }
-   };
+       audio.onerror = () => {
+         setIsSpeaking(false);
+         URL.revokeObjectURL(audioUrl);
+         toast.error('Error playing audio');
+       };
 
-   const stopSpeaking = () => {
-     if (speechSynthesisRef.current) {
-       speechSynthesisRef.current.cancel();
+       await audio.play();
+     } catch (error) {
+       console.error('TTS Error:', error);
+       toast.error('Error generating speech');
        setIsSpeaking(false);
      }
    };
@@ -200,8 +213,13 @@ export default function Copilot({ conversation, onConversationUpdate }) {
              {isRecording ? (<><MicOff className="w-4 h-4 mr-2" /> Stop Recording</>) : (<><Mic className="w-4 h-4 mr-2" /> Start Recording</>)}
            </Button>
            
-           <Button onClick={isSpeaking ? stopSpeaking : () => speakText(aiResponse)} variant="outline" disabled={!aiResponse || isLoading || isAnalyzing} className="w-full md:w-auto min-w-[160px]">
-             {isSpeaking ? (<><VolumeX className="w-4 h-4 mr-2" /> Stop Speaking</>) : (<><Volume2 className="w-4 h-4 mr-2" /> Speak Response</>)}
+           <Button
+             variant="outline"
+             size="icon"
+             onClick={() => speakText(aiResponse)}
+             disabled={!aiResponse || isLoading || isAnalyzing}
+           >
+             {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
            </Button>
          </div>
 
