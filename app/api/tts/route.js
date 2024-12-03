@@ -38,25 +38,14 @@ export async function POST(req) {
       );
     }
 
-    // Convert stream to buffer
-    const chunks = [];
-    const reader = stream.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-
-    const buffer = Buffer.concat(chunks);
-
-    // Return the audio as a response with appropriate headers
-    return new NextResponse(buffer, {
+    // Return the stream directly
+    return new NextResponse(stream, {
       headers: {
         'Content-Type': 'audio/wav',
-        'Content-Length': buffer.length.toString(),
+        'Transfer-Encoding': 'chunked',
       },
     });
+    
   } catch (error) {
     console.error('TTS Error:', error);
     return NextResponse.json(
