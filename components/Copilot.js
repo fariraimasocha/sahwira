@@ -115,8 +115,12 @@ export default function Copilot({ conversation, onConversationUpdate }) {
          { role: 'assistant', content: data.content }
        ];
        setMessages(newMessages);
-       await saveConversation(newMessages);
-       await speakText(data.content);
+       
+       // Start both operations in parallel
+       await Promise.all([
+         saveConversation(newMessages),
+         speakText(data.content)
+       ]);
 
      } catch (error) {
        console.error('AI processing error:', error);
